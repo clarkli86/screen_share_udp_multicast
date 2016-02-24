@@ -1,0 +1,7 @@
+# Qt
+*.user
+build-*
+Makefile
+
+# VIM
+*.swp
