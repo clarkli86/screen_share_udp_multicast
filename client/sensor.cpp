@@ -29,15 +29,15 @@ Sensor::~Sensor(){
 
 
 void Sensor::OnMReceive() {           
-  const auto ByteCount = receiveSocket_->bytesAvailable();
+  const auto byteCount = receiveSocket_->bytesAvailable();
 
   //new a buffer   
-  char buf[ByteCount];
+  char buf[byteCount];
 
-  const auto ReadCount = receiveSocket_->readDatagram( buf, ByteCount );
-  
-  QString address(reinterpret_cast<QChar*>(buf), ReadCount);
-  
+  const auto readCount = receiveSocket_->readDatagram( buf, byteCount );
+
+  const auto address = QString::fromLatin1(buf, readCount);
+  qDebug() << address;
   lock_guard<mutex> guard(serversMutex_);
   newServers_.insert( address );
 }

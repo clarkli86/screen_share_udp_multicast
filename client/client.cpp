@@ -23,16 +23,16 @@ Client::~Client(){
 }
 
 void Client::OnMReceive() {
-  const auto ByteCount = receiveSocket_->bytesAvailable();
+  const auto byteCount = receiveSocket_->bytesAvailable();
   
   //new a buffer
 
-  char buf[ByteCount];
+  char buf[byteCount];
   
-  const auto ReadCount = receiveSocket_->readDatagram(buf, ByteCount );
+  const auto readCount = receiveSocket_->readDatagram(buf, byteCount );
   
   QByteArray ba;
-  ba.setRawData( buf, ReadCount );
+  ba.setRawData( buf, readCount );
   
   QDataStream so(&ba, QIODevice::ReadOnly);
 

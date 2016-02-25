@@ -93,7 +93,10 @@ void
 ServerFrame::broadcast(void) {
 	QHostAddress	broadcastAddress;
     broadcastAddress.setAddress(broadcastIP_);
-    sktDev_.writeDatagram(reinterpret_cast<const char *>(workIP_.data()), workIP_.length(), broadcastAddress, PORT);
+
+    const auto ip = workIP_.toStdString();
+    qDebug() << ip.c_str();
+    sktDev_.writeDatagram(ip.c_str(), ip.length(), broadcastAddress, PORT);
 }
 
 int
