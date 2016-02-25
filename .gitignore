@@ -2,6 +2,8 @@
 *.user
 build-*
 Makefile
+*.o
+moc_*
 
 # VIM
 *.swp

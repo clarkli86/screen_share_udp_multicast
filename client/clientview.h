@@ -34,7 +34,7 @@ private slots:
 public slots:
  //menu slots
   void quit();
-  void changeServer( int );  
+  void changeServer(QAction*);
   void refreshMenu();
   void fullScreen();
   

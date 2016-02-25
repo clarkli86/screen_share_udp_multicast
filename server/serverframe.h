@@ -1,23 +1,21 @@
 #ifndef SERVER_FRAME_H
 #define SERVER_FRAME_H
 
-#include <QtWidgets/QDialog>
+#include <QDialog>
+#include <QLabel>
+#include <QPushButton>
+#include <QPixmap>
+#include <QString>
+#include <QTimer>
+#include <QSpinBox>
+#include <QUdpSocket>
 
-class QLabel;
-class QPushButton;
-class QPixmap;
-class QString;
-class QTimer;
-class QSpinBox;
-class QUdpSocket;
-
-typedef volatile unsigned int atomic_t;
+using atomic_t = volatile unsigned int;
 
 class ServerFrame : public QDialog {
 	Q_OBJECT
 public:
-	ServerFrame(QWidget *parent = 0, const char *name = 0);
-	void getUniqueFileName(char *);
+    ServerFrame(QWidget *parent = 0, const char *name = 0);
 
 protected:
 	void closeEvent(QCloseEvent *);
@@ -32,20 +30,20 @@ protected slots:
 private:
 	// Member variables
 	// Controls
-	QLabel		*intervalLabel;
-	QSpinBox	*intervalSpinBox;
-	QLabel		*unitLabel;
-	QPushButton	*refreshButton;
+    QLabel		intervalLabel_;
+    QSpinBox	intervalSpinBox_;
+    QLabel		unitLabel_;
+    QPushButton	refreshButton_;
 	// Others
-	QString		localHostIP;
-	QString		broadcastIP;
-	QString		workIP;
-	QString		uniqueFileName;
-	QTimer		*broadCastTimer;
-	QTimer		*workTimer;
-	QUdpSocket *sktDev;
-	int		interval;
-	atomic_t	run;
+    QString		localHostIP_;
+    QString		broadcastIP_;
+    QString		workIP_;
+    QString		uniqueFileName_;
+    QTimer		broadCastTimer_;
+    QTimer		workTimer_;
+    QUdpSocket  sktDev_;
+    int		    interval_;
+    atomic_t	run_;
 };
 
 #endif

@@ -1,13 +1,13 @@
 #include "clientview.h"
-#include <qpainter.h>           
-#include <qmenubar.h>
-#include <QMenu>
-#include <qmessagebox.h>
-#include <qtimer.h>
-#include <unistd.h>
 #include "client.h"
 #include "sensor.h"
-#include <qevent.h>
+#include <QMessageBox>
+#include <QEvent>
+#include <QContextMenuEvent>
+#include <QPainter>
+#include <unistd.h>
+
+
 ClientView::ClientView(QWidget *parent, const char *name ) : QWidget(parent), client_(this), sensor_(this)  {
     setWindowTitle( "Lan Screen Capture" );
     //set the timer
@@ -21,6 +21,7 @@ ClientView::ClientView(QWidget *parent, const char *name ) : QWidget(parent), cl
     menu_->addAction("&Fullscreen", this, SLOT(fullScreen()));
 
     serverList_.reset(new QMenu("Select a server", this));
+    connect(serverList_.get(), SIGNAL(triggered(QAction*)), this, SLOT(changeServer(QAction*)));
     menu_->addMenu(serverList_.get());
     menu_->addAction( "&Quit", this, SLOT( quit() ) );
 }
@@ -35,13 +36,9 @@ void ClientView::fullScreen()
 }
 
 void ClientView::drawContents( QPainter * p, int clipx, int clipy, int clipw, int cliph ) {   
-    if( true == fullScreen_ ) {
-    //hide the scroll bar
-    //this->resizeContents( 0, 0 );
+    if( width() != map_.width() || height() != map_.height() ) {
+        resize( map_.width(), map_.height() );
     }
-    else
-    //if( contentsWidth() != map.width() || contentsHeight() != map.height() )
-    //    resizes( map.width(), map.height() );
 
     p->drawPixmap( clipx, clipy, map_, clipx, clipy, clipw, cliph );
   
@@ -53,14 +50,15 @@ void ClientView::contextMenuEvent(QContextMenuEvent * event)
 }
 
 void ClientView::redrawPixmap( const int width, const int height, const int top, const QPixmap& newMap ) {
-  //resize the map
+    //resize the map
     if( map_.width() != width || map_.height() != height ) {
-      //map.resize( width, height );
+        map_.scaled(width, height);
     }
-  //bitBit the new Map to the specified to the map       
+
+    //bitBit the new Map to the specified to the map
     QPainter painter(&map_);
     painter.drawPixmap(0, top, newMap, 0, 0, newMap.width(), newMap.height());
-//    updateContents();
+    repaint();
 }
 
 //it's called after every 0.5s
@@ -74,14 +72,13 @@ void ClientView::quit() {
   emit quitSignal();
 }
 
-void ClientView::changeServer( int nId ) {
-  // Get address on the server and connect to it
-  /*
-  if( ! pClient->bind( address ) ) {
-    QMessageBox::warning( this, "Error", "Can't bind to the address " + address );
-    pServerList->setItemChecked( nId, false );
-  } 
-  */
+void ClientView::changeServer(QAction* action) {
+    const auto address = action->text();
+    qDebug() << address;
+    // Get address on the server and connect to it
+    if( ! client_.bind(address) ) {
+        QMessageBox::warning( this, "Error", "Can't bind to the address " + address );
+    }
 }
 
 void ClientView::refreshMenu() {  

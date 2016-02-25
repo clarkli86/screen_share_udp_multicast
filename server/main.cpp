@@ -1,4 +1,4 @@
-#include <QtWidgets/QApplication>
+#include <QApplication>
 #include <QEvent>
 
 #include <signal.h>
@@ -9,30 +9,12 @@
 
 #include "serverframe.h"
 
-#define LOCKFILE "/tmp/sashiwuli"
+int main(int argc, char *argv[]) {
+    QApplication    app(argc, argv);
 
-void
-termHandler(int signo) {
-	unlink(LOCKFILE);
-	exit(1);
-}
+    ServerFrame	*server = new ServerFrame();
 
-int
-main(int argc, char *argv[]) {
-	QApplication    app(argc, argv);
-	int		fd = open(LOCKFILE, O_CREAT | O_EXCL, S_IRWXU);
-
-	if (fd > 0) {
-		ServerFrame	*server = new ServerFrame();
-		server -> getUniqueFileName(LOCKFILE);
-
-		signal(SIGINT, termHandler);
-		signal(SIGTERM, termHandler);
-		signal(SIGKILL, termHandler);
-
-		app.setActiveWindow(server);
-		server -> show();
-		return app.exec();
-	} else
-		exit(1);
+    app.setActiveWindow(server);
+    server -> show();
+    return app.exec();
 }

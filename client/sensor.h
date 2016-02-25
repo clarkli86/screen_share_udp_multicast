@@ -8,6 +8,7 @@
 #include <QSocketNotifier>
 #include <QTimer>
 #include <memory>
+#include <mutex>
 class ClientView;
 
 class Sensor : public QObject  {
@@ -34,6 +35,9 @@ private:
   QTimer timer_;
   std::set< QString > newServers_;
   std::set< QString > oldServers_;
+
+  /// Protect the modification of servers
+  std::mutex serversMutex_;
 };
 
 #endif

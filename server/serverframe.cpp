@@ -1,11 +1,6 @@
-#include <QtWidgets/QLabel>
-#include <QtWidgets/QPushButton>
 #include <QString>
-#include <QTimer>
 #include <QBuffer>
-#include <QtWidgets/QSpinBox>
-#include <QtNetwork/QUdpSocket>
-#include <QtNetwork/QHostAddress>
+#include <QHostAddress>
 #include <QPixmap>
 #include <QDataStream>
 #include <QCloseEvent>
@@ -18,43 +13,45 @@
 #include <unistd.h>
 
 #include "serverframe.h"
+namespace {
+const char * BROADCAST = "224.0.0.1";
+constexpr int PORT = 5000;
+const char * LOCAL = "127.0.0.1";
+const char * INVALID = "224.0.1.255";
 
-#define BROADCAST "224.0.0.1"
-#define PORT 5000
-#define LOCAL "127.0.0.1"
-#define INVALID "224.0.1.255"
+constexpr int INTERVAL_MIN = 500;
+constexpr int INTERVAL_MAX = 5000;
+constexpr int INTERVAL_STEP = 10;
 
-#define INTERVAL_MIN 500
-#define INTERVAL_MAX 5000
-#define INTERVAL_STEP 10
+constexpr int WIDGET_WIDTH = 256;
+constexpr int WIDGET_HEIGHT = 235;
 
-#define WIDGET_WIDTH 256
-#define WIDGET_HEIGHT 235
+constexpr int GRABINTERVAL = 45000;
+}
 
-#define GRABINTERVAL 45000
-
-ServerFrame::ServerFrame(QWidget *parent, const char *name)
-	: QDialog(parent, Qt::WindowStaysOnTopHint) {
+ServerFrame::ServerFrame(QWidget *parent, const char *name)	: 
+    QDialog(parent, Qt::WindowStaysOnTopHint),
+    intervalLabel_(tr("&Interval: "), this),
+    intervalSpinBox_(this),
+    unitLabel_(tr(" microsecond(s)"), this),
+    refreshButton_(tr("&Refresh"), this)
+{
 	// init controls
 	fetchLocalHostIP();
-	setWindowTitle(tr("Host IP: ") + localHostIP);
-	intervalLabel = new QLabel(tr("&Interval: "), this);
-	intervalLabel -> move(6, 6);
-	intervalSpinBox = new QSpinBox(this);
-	intervalSpinBox -> setMinimum(INTERVAL_MIN);
-	intervalSpinBox -> setMaximum(INTERVAL_MAX);
-	intervalSpinBox -> setSingleStep(INTERVAL_STEP);
-	intervalSpinBox -> setValue(INTERVAL_MIN);
-	interval = INTERVAL_MIN;
-	intervalLabel -> setBuddy(intervalSpinBox);
-	intervalSpinBox -> move(60, 6);
+    setWindowTitle(tr("Host IP: ") + localHostIP_);
+    intervalLabel_ .move(6, 6);
+    intervalSpinBox_ .setMinimum(INTERVAL_MIN);
+    intervalSpinBox_ .setMaximum(INTERVAL_MAX);
+    intervalSpinBox_ .setSingleStep(INTERVAL_STEP);
+    intervalSpinBox_ .setValue(INTERVAL_MIN);
+    interval_ = INTERVAL_MIN;
+    intervalLabel_ .setBuddy(&intervalSpinBox_);
+    intervalSpinBox_ .move(60, 6);
 
-	unitLabel = new QLabel(tr(" microsecond(s)"), this);
-	unitLabel -> move(160, 6);
-	refreshButton = new QPushButton(tr("&Refresh"), this);
-	connect(refreshButton, SIGNAL(clicked()), this, SLOT(refresh()));
-	refreshButton -> resize(236, 180);
-	refreshButton -> move(10, 45);
+    unitLabel_ . move(160, 6);
+    connect(&refreshButton_, SIGNAL(clicked()), this, SLOT(refresh()));
+    refreshButton_ . resize(236, 180);
+    refreshButton_ . move(10, 45);
 
 	setMinimumWidth(WIDGET_WIDTH);
 	setMinimumHeight(WIDGET_HEIGHT);
@@ -62,55 +59,32 @@ ServerFrame::ServerFrame(QWidget *parent, const char *name)
 	setMaximumHeight(WIDGET_HEIGHT);
 	setSizeGripEnabled(false);
 
-	run = 0;
+    run_ = 0;
 
-	if (localHostIP == tr(LOCAL)) {
-		refreshButton -> setEnabled(false);
-		sktDev = NULL;
-		broadCastTimer = NULL;
-		workTimer = NULL;
+    if (localHostIP_ == tr(LOCAL)) {
+        refreshButton_.setEnabled(false);
 	} else  {
-		broadcastIP = tr(BROADCAST);
+        broadcastIP_ = tr(BROADCAST);
+        connect(&broadCastTimer_, SIGNAL(timeout()), this, SLOT(broadcast()));
 
-		sktDev = new QUdpSocket();
-
-		broadCastTimer = new QTimer(this);
-		connect(broadCastTimer, SIGNAL(timeout()),
-					this, SLOT(broadcast()));
-		broadCastTimer -> start(500);
-
-		workTimer = new QTimer(this);
-		connect(workTimer, SIGNAL(timeout()), this, SLOT(work()));
-		workTimer -> start(500);
+        broadCastTimer_. start(500);
+        connect(&workTimer_, SIGNAL(timeout()), this, SLOT(work()));
+        workTimer_.start(500);
 	}
 }
 
 void
-ServerFrame::getUniqueFileName(char *name) {
-	uniqueFileName = tr(name);
-}
-
-void
-ServerFrame::closeEvent(QCloseEvent *event) {
-	if (sktDev != NULL)
-		delete sktDev;
-	if (broadCastTimer != NULL) {
-		broadCastTimer -> stop();
-		delete broadCastTimer;
-	}
-	if (workTimer != NULL) {
-		workTimer -> stop();
-		delete workTimer;
-	}
-	unlink(reinterpret_cast<const char *>(uniqueFileName.data()));
+ServerFrame::closeEvent(QCloseEvent *event) {   
+    broadCastTimer_.stop();
+    workTimer_ . stop();
 	event -> accept();
 }
 
 void
 ServerFrame::refresh(void) {
-	if (interval != intervalSpinBox -> value()) {
-		workTimer -> setInterval(intervalSpinBox -> value());
-		interval = intervalSpinBox -> value();
+    if (interval_ != intervalSpinBox_.value()) {
+        workTimer_ . setInterval(intervalSpinBox_.value());
+        interval_ = intervalSpinBox_.value();
 	}
 	work();
 }
@@ -118,8 +92,8 @@ ServerFrame::refresh(void) {
 void
 ServerFrame::broadcast(void) {
 	QHostAddress	broadcastAddress;
-	broadcastAddress.setAddress(broadcastIP);
-	sktDev -> writeDatagram(reinterpret_cast<const char *>(workIP.data()), workIP.length(), broadcastAddress, PORT);
+    broadcastAddress.setAddress(broadcastIP_);
+    sktDev_.writeDatagram(reinterpret_cast<const char *>(workIP_.data()), workIP_.length(), broadcastAddress, PORT);
 }
 
 int
@@ -132,10 +106,10 @@ ServerFrame::getBltCount(QPixmap &win) {
 
 void
 ServerFrame::work(void) {
-	if (run == 0) {
-		run = 1;
+    if (run_ == 0) {
+        run_ = 1;
 		QHostAddress	workAddress;
-		workAddress.setAddress(workIP);
+        workAddress.setAddress(workIP_);
 		QPixmap		window = QPixmap::grabWindow(0);
 		int		bltCount = getBltCount(window);
 		int		grabWidth = window.width(),
@@ -151,7 +125,7 @@ ServerFrame::work(void) {
             QDataStream     s(&ba, QIODevice::WriteOnly);
 			s << window.width() << window.height()
 				<< i * grabHeight << map;
-            sktDev -> writeDatagram(reinterpret_cast<const char *>(ba.data()), ba.size(),
+            sktDev_.writeDatagram(reinterpret_cast<const char *>(ba.data()), ba.size(),
 					workAddress, PORT);
 			usleep(GRABINTERVAL);
 		}
@@ -164,11 +138,11 @@ ServerFrame::work(void) {
             QDataStream     s(&ba, QIODevice::WriteOnly);
 			s << window.width() << window.height()
 				<< i * grabHeight << map;
-            sktDev -> writeDatagram(reinterpret_cast<const char *>(ba.data()), ba.size(),
+            sktDev_.writeDatagram(reinterpret_cast<const char *>(ba.data()), ba.size(),
 					workAddress, PORT);
 		}
 
-		run = 0;
+        run_ = 0;
 	}
 }
 
@@ -180,17 +154,17 @@ ServerFrame::fetchLocalHostIP() {
 
 	strcpy(ifr.ifr_name, "eth0");
 	if (ioctl(inet_sock, SIOCGIFADDR, &ifr) < 0) {
-		localHostIP = tr(LOCAL);
-		workIP = tr(INVALID);
+        localHostIP_ = tr(LOCAL);
+        workIP_ = tr(INVALID);
 	}
 	else {
 		in_addr	address =
 			((struct sockaddr_in *) &(ifr.ifr_addr)) -> sin_addr;
-		localHostIP = tr(inet_ntoa(address));
+        localHostIP_ = tr(inet_ntoa(address));
 		s_mask &= address.s_addr;
 		s_addr |= s_mask;
 		address.s_addr = s_addr;
-		workIP = tr(inet_ntoa(address));
+        workIP_ = tr(inet_ntoa(address));
 	}
 }
 

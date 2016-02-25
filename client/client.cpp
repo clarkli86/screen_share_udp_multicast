@@ -22,24 +22,19 @@ Client::Client(  ClientView * pClientView ) : pcv_( pClientView ) {
 Client::~Client(){  
 }
 
-void Client::OnMReceive() {           
-  if( NULL == receiveSocket_ )
-    return;
-    
-  int ByteCount, ReadCount;
-                      
-  ByteCount = receiveSocket_->bytesAvailable();
+void Client::OnMReceive() {
+  const auto ByteCount = receiveSocket_->bytesAvailable();
   
   //new a buffer
 
-  char* buf = new char[ ByteCount ];  
+  char buf[ByteCount];
   
-  ReadCount = receiveSocket_->readDatagram(buf, ByteCount );
+  const auto ReadCount = receiveSocket_->readDatagram(buf, ByteCount );
   
   QByteArray ba;
-  ba.setRawData( buf, ByteCount ); 
+  ba.setRawData( buf, ReadCount );
   
-  QDataStream so(  &ba, QIODevice::ReadOnly );
+  QDataStream so(&ba, QIODevice::ReadOnly);
 
   int width;
   int height;
@@ -49,10 +44,6 @@ void Client::OnMReceive() {
   so >> width >> height >> top >> newMap;    
   //update the contents                 
   pcv_->redrawPixmap( width, height, top, newMap );
-
-  //free the buffer
-  ba.clear();
-  delete [] buf;                 
 }
 
 /*
@@ -61,8 +52,7 @@ void Client::OnMReceive() {
 bool Client::bind( const QString FakeAddress ) {
   receiveSocket_.reset(new QUdpSocket);
   
-  QHostAddress MyAddress;   
-  MyAddress.setAddress( FakeAddress );                               
+  QHostAddress MyAddress( FakeAddress );
   
   bool bindResult =  receiveSocket_->bind( MyAddress, PORT );
   //add to the group
