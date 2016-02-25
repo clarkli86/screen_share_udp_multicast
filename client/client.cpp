@@ -49,14 +49,14 @@ void Client::OnMReceive() {
 /*
   *bind or rebind to another address
 */
-bool Client::bind( const QString FakeAddress ) {
+bool Client::bind( const QString & ip ) {
   receiveSocket_.reset(new QUdpSocket);
   
-  QHostAddress MyAddress( FakeAddress );
+  QHostAddress MyAddress( ip );
   
   bool bindResult =  receiveSocket_->bind( MyAddress, PORT );
   //add to the group
-  bool setResult = setSocketOpt( receiveSocket_, FakeAddress );
+  bool setResult = setSocketOpt( receiveSocket_, ip );
 
   socketNotifier_.reset(new QSocketNotifier( receiveSocket_->socketDescriptor(), QSocketNotifier::Read));
 
@@ -68,11 +68,11 @@ bool Client::bind( const QString FakeAddress ) {
 /*
   *add the socketdevice to a group
 */
-bool Client::setSocketOpt(unique_ptr<QUdpSocket> & MUReceiveSocket, const QString address ) {
-  int s = MUReceiveSocket->socketDescriptor();
+bool Client::setSocketOpt(unique_ptr<QUdpSocket> & MUReceiveSocket, const QString & address ) {
+  const int s = MUReceiveSocket->socketDescriptor();
 
   struct ip_mreq mreq;
-  if( inet_aton( reinterpret_cast<const char *>(address.data()), &mreq.imr_multiaddr ) == 0 ) {
+  if( inet_aton( address.toLatin1(), &mreq.imr_multiaddr ) == 0 ) {
     QMessageBox::warning( pcv_.get(), "Error", "can't construct a multicast address" );
     return false;
   }

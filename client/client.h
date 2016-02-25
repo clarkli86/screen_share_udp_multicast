@@ -14,10 +14,10 @@ public:
 	Client( ClientView *  );
 	~Client();
   //bind the multicast address
-  bool bind( const QString );
+  bool bind( const QString &);
 
 private:
-  bool setSocketOpt(std::unique_ptr<QUdpSocket> &, const QString );
+  bool setSocketOpt(std::unique_ptr<QUdpSocket> &, const QString &);
    
 public slots:
   //receive udp packet
