@@ -1,9 +1,5 @@
-#include <qapplication.h>
-#include <qfont.h>
-#include <qstring.h>
-#include <qtextcodec.h>
-#include <qtranslator.h>
-#include <qpushbutton.h>    
+#include <QApplication>
+#include <QScrollArea>
 #include "clientview.h"
 
 int main(int argc, char *argv[])
@@ -14,10 +10,12 @@ int main(int argc, char *argv[])
 
   QObject::connect( &cv, SIGNAL( quitSignal() ), &a, SLOT( quit() ) );
 
-  cv.start();
+  QScrollArea scroll;
+  scroll.setWidget(&cv);
+
   cv.resize( 400, 400 );
   a.setActiveWindow(&cv );
-  cv.show();  
+  scroll.show();
   
   return a.exec();
 }

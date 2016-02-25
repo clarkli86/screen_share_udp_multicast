@@ -1,25 +1,24 @@
 #ifndef SENSOR_H
 #define SENSOR_H
 
-
-#include <qobject.h>
+#include <QObject>
 #include <set>
-using namespace std;
-
-class QUdpSocket;
-class QSocketNotifier;
+#include <QString>
+#include <QUdpSocket>
+#include <QSocketNotifier>
+#include <QTimer>
+#include <memory>
 class ClientView;
-class QTimer;
 
 class Sensor : public QObject  {
    Q_OBJECT    
 public: 
-	Sensor( ClientView * pCientView );
+    Sensor( ClientView * pCientView );
 	~Sensor();
   void refresh();
 private:
   //bind the multicast address
-  bool bind( const QString );
+  bool bind( const QString &);
   
 public slots:
   //receive udp packet
@@ -29,12 +28,12 @@ private slots:
   void timerDone();
 
 private:
-  QUdpSocket * MUReceiveSocket;
-  QSocketNotifier * MSocketNotifier;
-  ClientView * pcv;
-  QTimer * pTimer;
-  set< QString > newServers;
-  set< QString > oldServers;
+  std::unique_ptr<QUdpSocket> receiveSocket_;
+  std::unique_ptr<QSocketNotifier> socketNotifier_;
+  ClientView * pcv_;
+  QTimer timer_;
+  std::set< QString > newServers_;
+  std::set< QString > oldServers_;
 };
 
 #endif

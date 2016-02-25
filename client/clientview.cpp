@@ -8,88 +8,57 @@
 #include "client.h"
 #include "sensor.h"
 #include <qevent.h>
-ClientView::ClientView(QWidget *parent, const char *name ) : QScrollArea(parent)  {
-   bFullScreen = false;
-   bShowMenu = true;
-   setWindowTitle( "Lan Screen Capture" );
-   //set the timer
-   pTimer = new QTimer( this );
-   connect( pTimer, SIGNAL( timeout() ), this, SLOT( timeout() ) );
-   pTimer->start( 500 );
+ClientView::ClientView(QWidget *parent, const char *name ) : QWidget(parent), client_(this), sensor_(this)  {
+    setWindowTitle( "Lan Screen Capture" );
+    //set the timer
+    connect(&timer_, SIGNAL( timeout() ), this, SLOT( timeout() ) );
+    timer_.start( 500 );
+
+    menu_.reset(new QMenu( this ));
+
+    //insert into the option
+    menu_->addAction( "&Refresh server list", this, SLOT( refreshMenu() ) );
+    menu_->addAction("&Fullscreen", this, SLOT(fullScreen()));
+
+    serverList_.reset(new QMenu("Select a server", this));
+    menu_->addMenu(serverList_.get());
+    menu_->addAction( "&Quit", this, SLOT( quit() ) );
 }
 
-
-ClientView::~ClientView(){
-       delete pTimer;	
+ClientView::~ClientView(){     
 }
 
-
-void ClientView::start() {
-  pClient = new Client( this );
-   pSensor = new Sensor( this );
-   //initial the menubar
-   pMenuBar = new QMenuBar( this );
-
-   pMenu = new QMenu( this );
-
-   pServerList = new QMenu("Options", this);
-   //insert into the option
-   pMenu->addAction( "&Refresh server list", this, SLOT( refreshMenu() ) );
-   QMenu * servers = new QMenu("Select a server", this);
-   pMenu->addMenu(servers );
-   pMenu->addAction( "Show&Menu", this, SLOT( showMenu() ) );
-   pMenu->addAction( "&Quit", this, SLOT( quit() ) );
-
-   pMenuBar->addMenu(pMenu );
-
-   QMenu * pAbout = new QMenu("Help", this );
-   pAbout->addAction( "Abort", this, SLOT( showAbout() ) );
-   pMenuBar->addMenu(pAbout );
+void ClientView::fullScreen()
+{
+    fullScreen_ = !fullScreen_;
+    setWindowState(fullScreen_ ? Qt::WindowFullScreen : Qt::WindowNoState);
 }
 
 void ClientView::drawContents( QPainter * p, int clipx, int clipy, int clipw, int cliph ) {   
-  if( true == bFullScreen ) {
-  //hide the scroll bar
+    if( true == fullScreen_ ) {
+    //hide the scroll bar
     //this->resizeContents( 0, 0 );
     }
-  else
+    else
     //if( contentsWidth() != map.width() || contentsHeight() != map.height() )
     //    resizes( map.width(), map.height() );
 
-  p->drawPixmap( clipx, clipy, map, clipx, clipy, clipw, cliph );
+    p->drawPixmap( clipx, clipy, map_, clipx, clipy, clipw, cliph );
   
 }        
 
-void ClientView::contentsMouseDoubleClickEvent( QMouseEvent * e ) {
-    if( Qt::LeftButton != e->button() )
-      return;
-      
-    if( false == bFullScreen ) {  
-      showFullScreen();
-      pMenuBar->hide();
-      bFullScreen = true;
-    }
-    else {
-      showNormal();
-      pMenuBar->show();
-      bFullScreen = false;
-    }
-}       
-
-void ClientView::contentsMouseReleaseEvent ( QMouseEvent * e ) {
-  if( Qt::RightButton != e->button() )
-    return;                
- 
-  pMenu->popup( e->globalPos() );
+void ClientView::contextMenuEvent(QContextMenuEvent * event)
+{
+    menu_->exec(event->globalPos());
 }
 
 void ClientView::redrawPixmap( const int width, const int height, const int top, const QPixmap& newMap ) {
   //resize the map
-    if( map.width() != width || map.height() != height ) {
+    if( map_.width() != width || map_.height() != height ) {
       //map.resize( width, height );
     }
   //bitBit the new Map to the specified to the map       
-    QPainter painter(&map);
+    QPainter painter(&map_);
     painter.drawPixmap(0, top, newMap, 0, 0, newMap.width(), newMap.height());
 //    updateContents();
 }
@@ -115,23 +84,10 @@ void ClientView::changeServer( int nId ) {
   */
 }
 
-void ClientView::showMenu() {
-  bShowMenu = ! bShowMenu;
-
-  if( bShowMenu == true )
-    pMenuBar->show();
-  else
-    pMenuBar->hide();
-}
-
 void ClientView::refreshMenu() {  
-  pSensor->refresh(); 
-}
-
-void ClientView::showAbout() {
-  QMessageBox::about( this, "About Lan Screen Capture", "Lan Screen Capture Release 1.0 for Linux Red Hat\nProgram:\n\tHongLiang Li\n\tQian Zhu\n\tQi Xie\nSpecial thanks for Robert Luo\nBug Report: thenshesaid2003@yahoo.com.cn" );
+  sensor_.refresh();
 }
 
 QMenu* ClientView::getServerList() {
-	return pServerList;
+    return serverList_.get();
 }

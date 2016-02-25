@@ -1,13 +1,11 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
-#include <qobject.h>
+#include <QObject>
+#include <QUdpSocket>
+#include <QSocketNotifier>
+#include <memory>
 
-
-/** This class is used to receive the udp packet from the server and convert it to a pixmap
-  */
-class QUdpSocket;
-class QSocketNotifier;
 class ClientView;
 
 class Client : public QObject  {
@@ -19,16 +17,16 @@ public:
   bool bind( const QString );
 
 private:
-  bool setSocketOpt( const QUdpSocket *, const QString );
+  bool setSocketOpt(std::unique_ptr<QUdpSocket> &, const QString );
    
 public slots:
   //receive udp packet
   void OnMReceive();    
   
 private:
-  ClientView * pcv;     
-  QUdpSocket * MUReceiveSocket;
-  QSocketNotifier * MSocketNotifier;
+  std::unique_ptr<ClientView> pcv_;
+  std::unique_ptr<QUdpSocket> receiveSocket_;
+  std::unique_ptr<QSocketNotifier> socketNotifier_;
 };
 
 #endif
