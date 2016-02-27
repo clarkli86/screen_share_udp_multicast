@@ -95,7 +95,6 @@ ServerFrame::broadcast(void) {
     broadcastAddress.setAddress(broadcastIP_);
 
     const auto ip = workIP_.toStdString();
-    qDebug() << ip.c_str();
     sktDev_.writeDatagram(ip.c_str(), ip.length(), broadcastAddress, PORT);
 }
 
@@ -114,6 +113,7 @@ ServerFrame::work(void) {
 		QHostAddress	workAddress;
         workAddress.setAddress(workIP_);
 		QPixmap		window = QPixmap::grabWindow(0);
+
 		int		bltCount = getBltCount(window);
 		int		grabWidth = window.width(),
 				grabHeight = window.height() / bltCount,
@@ -127,7 +127,8 @@ ServerFrame::work(void) {
 			QByteArray      ba;
             QDataStream     s(&ba, QIODevice::WriteOnly);
 			s << window.width() << window.height()
-				<< i * grabHeight << map;
+                << i * grabHeight << map;
+
             sktDev_.writeDatagram(reinterpret_cast<const char *>(ba.data()), ba.size(),
 					workAddress, PORT);
 			usleep(GRABINTERVAL);

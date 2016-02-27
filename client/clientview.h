@@ -26,7 +26,7 @@ protected:
   void contextMenuEvent(QContextMenuEvent * event) Q_DECL_OVERRIDE;
   void contentsMouseDoubleClickEvent( QMouseEvent * e );
   void contentsMouseReleaseEvent( QMouseEvent * e );
-  void drawContents( QPainter * p, int clipx, int clipy, int clipw, int cliph );
+  void paintEvent(QPaintEvent * e);
 
 private slots:
 	void timeout();

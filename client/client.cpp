@@ -11,10 +11,13 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include "clientview.h"
+#include <QDebug>
 
 using namespace std;
 
-static const int PORT = 5000;
+namespace {
+constexpr int PORT = 5000;
+}
 
 Client::Client(  ClientView * pClientView ) : pcv_( pClientView ) {
 }
@@ -23,27 +26,28 @@ Client::~Client(){
 }
 
 void Client::OnMReceive() {
-  const auto byteCount = receiveSocket_->bytesAvailable();
-  
-  //new a buffer
+    const auto byteCount = receiveSocket_->bytesAvailable();
 
-  char buf[byteCount];
-  
-  const auto readCount = receiveSocket_->readDatagram(buf, byteCount );
-  
-  QByteArray ba;
-  ba.setRawData( buf, readCount );
-  
-  QDataStream so(&ba, QIODevice::ReadOnly);
+    //new a buffer
 
-  int width;
-  int height;
-  int top;
-  QPixmap newMap;
+    char buf[byteCount];
 
-  so >> width >> height >> top >> newMap;    
-  //update the contents                 
-  pcv_->redrawPixmap( width, height, top, newMap );
+    const auto readCount = receiveSocket_->readDatagram(buf, byteCount );
+
+    QByteArray ba;
+    ba.setRawData( buf, readCount );
+
+    QDataStream so(&ba, QIODevice::ReadOnly);
+
+    int width;
+    int height;
+    int top;
+    QPixmap newMap;
+
+    so >> width >> height >> top >> newMap;
+    newMap.save("test.png");
+    //update the contents
+    pcv_->redrawPixmap( width, height, top, newMap );
 }
 
 /*
@@ -53,16 +57,21 @@ bool Client::bind( const QString & ip ) {
   receiveSocket_.reset(new QUdpSocket);
   
   QHostAddress MyAddress( ip );
-  
-  bool bindResult =  receiveSocket_->bind( MyAddress, PORT );
+    
+  if(!receiveSocket_->bind( MyAddress, PORT )) {
+      qWarning() << "Failed to bind to server";
+      return false;
+  }
   //add to the group
-  bool setResult = setSocketOpt( receiveSocket_, ip );
+  if(!setSocketOpt( receiveSocket_, ip )) {
+      qWarning() << "Failed to join the multicast group";
+  }
 
   socketNotifier_.reset(new QSocketNotifier( receiveSocket_->socketDescriptor(), QSocketNotifier::Read));
 
   QObject::connect( socketNotifier_.get(), SIGNAL( activated( int ) ), this, SLOT( OnMReceive() ) );
 
-  return bindResult & setResult;
+  return true;
 }
 
 /*

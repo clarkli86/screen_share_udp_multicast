@@ -35,13 +35,13 @@ void ClientView::fullScreen()
     setWindowState(fullScreen_ ? Qt::WindowFullScreen : Qt::WindowNoState);
 }
 
-void ClientView::drawContents( QPainter * p, int clipx, int clipy, int clipw, int cliph ) {   
-    if( width() != map_.width() || height() != map_.height() ) {
+void ClientView::paintEvent(QPaintEvent * e ) {
+    if((width() != map_.width() || height() != map_.height()) && map_.height() != 0 && map_.width() != 0) {
         resize( map_.width(), map_.height() );
     }
 
-    p->drawPixmap( clipx, clipy, map_, clipx, clipy, clipw, cliph );
-  
+    QPainter painter(this);
+    painter.drawPixmap(0, 0, map_);
 }        
 
 void ClientView::contextMenuEvent(QContextMenuEvent * event)
@@ -51,20 +51,20 @@ void ClientView::contextMenuEvent(QContextMenuEvent * event)
 
 void ClientView::redrawPixmap( const int width, const int height, const int top, const QPixmap& newMap ) {
     //resize the map
-    if( map_.width() != width || map_.height() != height ) {
-        map_.scaled(width, height);
+    if((map_.width() != width || map_.height() != height) && height != 0 && width != 0) {
+        map_ = map_.scaled(width, height);
     }
 
     //bitBit the new Map to the specified to the map
     QPainter painter(&map_);
     painter.drawPixmap(0, top, newMap, 0, 0, newMap.width(), newMap.height());
-    repaint();
+    update();
 }
 
 //it's called after every 0.5s
 void ClientView::timeout() {
 	//redraw the content
-    repaint();
+    update();
 }
 
 void ClientView::quit() {
@@ -74,7 +74,7 @@ void ClientView::quit() {
 
 void ClientView::changeServer(QAction* action) {
     const auto address = action->text();
-    qDebug() << address;
+    qDebug() << "Change to " << address;
     // Get address on the server and connect to it
     if( ! client_.bind(address) ) {
         QMessageBox::warning( this, "Error", "Can't bind to the address " + address );

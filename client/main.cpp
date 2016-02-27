@@ -2,6 +2,10 @@
 #include <QScrollArea>
 #include "clientview.h"
 
+namespace {
+constexpr int INITIAL_WIDTH = 400;
+constexpr int INITIAL_HEIGHT = 400;
+}
 int main(int argc, char *argv[])
 {      
   QApplication a(argc, argv);
@@ -13,8 +17,8 @@ int main(int argc, char *argv[])
   QScrollArea scroll;
   scroll.setWidget(&cv);
 
-  cv.resize( 400, 400 );
-  a.setActiveWindow(&cv );
+  cv.resize( INITIAL_WIDTH, INITIAL_HEIGHT );
+  a.setActiveWindow(&scroll );
   scroll.show();
   
   return a.exec();
