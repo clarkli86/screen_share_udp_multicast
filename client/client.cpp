@@ -45,7 +45,6 @@ void Client::OnMReceive() {
     QPixmap newMap;
 
     so >> width >> height >> top >> newMap;
-    newMap.save("test.png");
     //update the contents
     pcv_->redrawPixmap( width, height, top, newMap );
 }

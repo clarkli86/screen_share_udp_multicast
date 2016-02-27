@@ -24,6 +24,11 @@ ClientView::ClientView(QWidget *parent, const char *name ) : QWidget(parent), cl
     connect(serverList_.get(), SIGNAL(triggered(QAction*)), this, SLOT(changeServer(QAction*)));
     menu_->addMenu(serverList_.get());
     menu_->addAction( "&Quit", this, SLOT( quit() ) );
+
+    if(!map_.load(":/images/logo.png")) {
+        QMessageBox::warning( this, "Error", "Can't load logo");
+        exit(-1);
+    }
 }
 
 ClientView::~ClientView(){     

@@ -37,7 +37,7 @@ void Sensor::OnMReceive() {
   const auto readCount = receiveSocket_->readDatagram( buf, byteCount );
 
   const auto address = QString::fromLatin1(buf, readCount);
-  qDebug() << address;
+
   lock_guard<mutex> guard(serversMutex_);
   newServers_.insert( address );
 }
