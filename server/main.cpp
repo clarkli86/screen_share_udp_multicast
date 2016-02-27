@@ -6,7 +6,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-
 #include "serverframe.h"
 
 int main(int argc, char *argv[]) {
@@ -16,5 +15,6 @@ int main(int argc, char *argv[]) {
 
     app.setActiveWindow(server);
     server -> show();
+
     return app.exec();
 }

@@ -10,10 +10,12 @@
 #include <net/if.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <QNetworkInterface>
 #include <unistd.h>
-
 #include "serverframe.h"
 namespace {
+const char * IP_STRING_SPLITTER = ".";
+const char * MULTI_CAST_PREFIX = "224.0.0.";
 const char * BROADCAST = "224.0.0.1";
 constexpr int PORT = 5000;
 const char * LOCAL = "127.0.0.1";
@@ -152,23 +154,20 @@ ServerFrame::work(void) {
 
 void
 ServerFrame::fetchLocalHostIP() {
-	int		inet_sock = socket(AF_INET, SOCK_DGRAM, 0);
-	struct ifreq	ifr;
-	unsigned int	s_addr = 0X000100E0, s_mask = 0X0FF000000;
-
-	strcpy(ifr.ifr_name, "eth0");
-	if (ioctl(inet_sock, SIOCGIFADDR, &ifr) < 0) {
-        localHostIP_ = tr(LOCAL);
-        workIP_ = tr(INVALID);
-	}
-	else {
-		in_addr	address =
-			((struct sockaddr_in *) &(ifr.ifr_addr)) -> sin_addr;
-        localHostIP_ = tr(inet_ntoa(address));
-		s_mask &= address.s_addr;
-		s_addr |= s_mask;
-		address.s_addr = s_addr;
-        workIP_ = tr(inet_ntoa(address));
-	}
+    const auto interfaces = QNetworkInterface::allInterfaces();
+    for(auto & interface : interfaces) {
+        const auto & addresses = interface.addressEntries();
+        for(auto & address : addresses) {
+        if(   address.ip().toString() != LOCAL
+           && !(interface.flags() & QNetworkInterface::IsLoopBack)
+           && interface.flags() & QNetworkInterface::IsUp
+              ) {
+            localHostIP_ = address.ip().toString();
+            workIP_ = QString(MULTI_CAST_PREFIX)
+                    + address.ip().toString().split(IP_STRING_SPLITTER).back();
+            return;
+        }
+        }
+    }
 }
 
